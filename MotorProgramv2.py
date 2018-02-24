@@ -2,22 +2,21 @@ import RPi.GPIO as GPIO
 import time
 import socket
 import struct
+import sys
 
-ENA = 21
-ENB = 16
-IN1 = 2
-IN2 = 15
-IN3 = 23
-IN4 = 25
+ENA = 4
+ENB = 27
+IN1 = 17
+IN2 = 18
+IN3 = 22
+IN4 = 23
 motot1 = None
 motor2 = None
+s = None
+previousTime = None
 
-FORWARD = "1"
-BACKWARD = "3"
-RIGHT = "2"
-LEFT = "4"
-STOP = "0"
-EXIT = "5"
+TIME_LIMIT = 1
+
 INPUT_FORMAT = 'i i'
 
 def setup():
@@ -77,39 +76,61 @@ def runMotors(leftPower, rightPower):
             GPIO.output(IN3, GPIO.LOW)
             GPIO.output(IN4, GPIO.HIGH)
             motor2.start(abs(leftPower))
-    
-        
+
+
+def connect():
+    global s
+    global previousTime
+    s = socket.socket()
+    hostname = "192.168.2.3"
+    port = 1234
+    print("Connecting...")
+    while(1):
+        try:
+            s.connect((hostname, port))
+            previousTime = time.time()
+            print('Connected')
+            break
+        except socket.error as e:
+            print('Cant connect')
+            s.close
+        except KeyboardInterrupt:
+            print("Program Ended")
+            s.close
+            sys.exit()
+
 setup()
-s = socket.socket()
-hostname = "192.168.2.6"
-port = 1234
-s.connect((hostname, port))
-print("Connected")
+connect()
 while(1):
-    unpackedCommand = s.recv(struct.calcsize(INPUT_FORMAT))
-    command = struct.unpack(INPUT_FORMAT, unpackedCommand)
-    leftPower = command[0]
-    rightPower = command[1]
-    runMotors(leftPower, rightPower)
-    '''leftPower = float(command[0])
-    rightPower = float(command[1])
-    runMotors(leftPower, rightPower)
-    if (command == FORWARD):
-        moveForward()
-    elif(command == BACKWARD):
-        moveBackward()
-    elif(command == RIGHT):
-        moveRight()
-    elif(command == LEFT):
-        moveLeft()
-    elif(command == STOP):
-        stop()
-    elif(command == EXIT):
+    try:
+        '''command = s.recv(1024)'''
+        unpackedCommand = s.recv(struct.calcsize(INPUT_FORMAT))
+        currentTime = time.time()
+        if ((currentTime - previousTime) > TIME_LIMIT):
+            print("Timeout error")
+            connect()
+        previousTime = currentTime
+        command = struct.unpack(INPUT_FORMAT, unpackedCommand)
+        print(command)
+        leftPower = command[0]
+        rightPower = command[1]
+        runMotors(leftPower, rightPower) 
+    except KeyboardInterrupt:
+        print("Program Ended")
+        GPIO.cleanup()
         s.close
         break
-    '''    
+    except socket.error:
+        print("Lost Connection")
+        s.close
+        runMotors(0, 0)
+        connect()
+    except:
+        print("Program Error")
+        s.close
+        runMotors(0, 0)
+        connect()
         
-GPIO.cleanup()
 
 
 
