@@ -19,14 +19,20 @@ activeMotor = 0
 currentPos0 = 0
 currentPos1 = 0
 currentPos2 = 0
+currentPos3 = 0
+currentPos4 = 0
 CHOOSE_MOTOR_COMMAND = 9
 REST_ARM_COMMAND = 7
 INITIATE_ARM_COMMAND = 8
+GRABBING_ARM_COMMAND = 12
 STOP_COMMAND = 10
+INVALID_MOTOR = -1
 MOTOR_0 = 0
 MOTOR_1 = 4
 MOTOR_2 = 5
-MOTOR_DELAY = 0.001
+MOTOR_3 = 6
+MOTOR_4 = 7
+MOTOR_DELAY = 0.0005
 
 #gripper 330 closed- 230 open
 '''def setServoPulse(channel, pulse):
@@ -48,6 +54,10 @@ def chooseMotor():
         activeMotor = motorNum
     elif(motorNum == MOTOR_2):
         activeMotor = motorNum
+    elif(motorNum == MOTOR_3):
+        activeMotor = motorNum
+    elif(motorNum == MOTOR_4):
+        activeMotor = motorNum
     else:
         activeMotor = MOTOR_0
 
@@ -68,26 +78,36 @@ def getMotorPosition(activeMotor):
         return currentPos1
     elif(activeMotor == MOTOR_2):
         return currentPos2
+    elif(activeMotor == MOTOR_3):
+        return currentPos3
+    elif(activeMotor == MOTOR_4):
+        return currentPos4
     else:
-        return -1
+        return INVALID_MOTOR
 
 def setMotorPosition(activeMotor, position):
     global currentPos0
     global currentPos1
     global currentPos2
+    global currentPos3
+    global currentPos4
     if(activeMotor == MOTOR_0):
         currentPos0 = position
     elif(activeMotor == MOTOR_1):
         currentPos1 = position
     elif(activeMotor == MOTOR_2):
         currentPos2 = position
+    elif(activeMotor == MOTOR_3):
+        currentPos3 = position
+    elif(activeMotor == MOTOR_4):
+        currentPos4 = position
     else:
         print("Did not set position for motor")
     
 def runMotorSlow(activeMotor, destinationValue):
     global motorPwm
     currentPos = getMotorPosition(activeMotor)
-    if (currentPos == -1):
+    if (currentPos == INVALID_MOTOR):
         print("Invalid active motor")
         return
     if(destinationValue >= 160 & destinationValue <= 500):
@@ -103,36 +123,53 @@ def runMotorSlow(activeMotor, destinationValue):
         setMotorPosition(activeMotor, destinationValue)
     else:
         print('Bit value out of range in runMotorSlow')
-    
-def restArm():
-    global currentPos0
-    global currentPos1
-    global currentPos2
-    runMotor(MOTOR_0, 500)
-    time.sleep(1.5)
-    runMotor(MOTOR_1, 380)
-    time.sleep(1.5)
-    runMotor(MOTOR_2, 500)
-    time.sleep(2)
-    currentPos0 = 500
-    currentPos1 = 380
-    currentPos2 = 500
-def initiateArm():
-    runMotor(MOTOR_2, 500)
-    time.sleep(1.5)
-    runMotor(MOTOR_1, 200)
-    time.sleep(1.5)
-    runMotor(MOTOR_0, 450)
-    time.sleep(1.5)
 
 def stopMotors():
     runMotor(MOTOR_0, 0)
     runMotor(MOTOR_1, 0)
     runMotor(MOTOR_2, 0)
 
+
+def restArm():
+    # Used for laying arm back down from arm ready position
+    runMotorSlow(MOTOR_1, 360)
+    time.sleep(1)
+    runMotorSlow(MOTOR_2, 300)
+    time.sleep(1)
+    runMotorSlow(MOTOR_0, 500)
+    stopMotors()
+
+def initialArmPos():
+    # Used for initial arm position
+    runMotor(MOTOR_0, 500)
+    runMotor(MOTOR_1, 360)
+    runMotor(MOTOR_2, 300)
+    runMotor(MOTOR_3, 320)
+    setMotorPosition(MOTOR_0, 500)
+    setMotorPosition(MOTOR_1, 360)
+    setMotorPosition(MOTOR_2, 300)
+    setMotorPosition(MOTOR_3, 320)
+    
+    #runMotor(MOTOR_4, 330)
+def initiateArm():
+    runMotorSlow(MOTOR_1, 230)
+    time.sleep(1)
+    runMotorSlow(MOTOR_0, 430)
+    time.sleep(1)
+    runMotorSlow(MOTOR_2, 300)
+    time.sleep(1)
+
+def grabbingArm():
+    runMotorSlow(MOTOR_2, 500)
+    time.sleep(0.5)
+    runMotorSlow(MOTOR_1, 160)
+    time.sleep(0.5)
+    runMotorSlow(MOTOR_0, 480)
+        
+    
 motorPwm = PWM(0x40)
 motorPwm.setPWMFreq(50) # Set frequency to 50 Hz
-restArm()
+initialArmPos()
 chooseMotor()
 while True:
     try:
@@ -143,6 +180,8 @@ while True:
             restArm()
         elif (command == INITIATE_ARM_COMMAND):
             initiateArm()
+        elif (command == GRABBING_ARM_COMMAND):
+            grabbingArm()
         elif (command == STOP_COMMAND):
             stopMotors()
         else:
