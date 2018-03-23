@@ -86,22 +86,21 @@ def connectToNetworkHub():
     networkHubSocket = socket.socket()
     hostname = socket.gethostname()
     port = 4001
-    print("Connecting to network hub")
-    networkHubSocket.connect((hostname, port))
-    print("Connected to network hub")
-    '''while(1):
+    #networkHubSocket.connect((hostname, port))
+    #print("Connected to network hub")
+    while(1):
+        print("Connecting to network hub")
         try:
-            s.connect((hostname, port))
-            previousTime = time.time()
-            print('Connected')
+            networkHubSocket.connect((hostname, port))
+            print('Connected to network hub')
             break
         except socket.error as e:
-            print('Cant connect')
-            s.close
+            print('Cant connect to network hub')
+            networkHubSocket.close
         except KeyboardInterrupt:
             print("Program Ended")
-            s.close
-            sys.exit()'''
+            networkHubSocket.close
+            sys.exit()
 
 def chooseMotor():
     global activeMotor
@@ -115,26 +114,33 @@ def chooseMotor():
     else:
         activeMotor = MOTOR_0
 
-def runMotor(activeMotor, bit):
-    global motorPwm
-    if(bit >= 160 & bit <= 500):
-        motorPwm.setPWM(activeMotor, 0, bit)
-
 def stopMotors():
     runMotor(MOTOR_0, 0)
     runMotor(MOTOR_1, 0)
     runMotor(MOTOR_2, 0)
 
+def closeConnections():
+    networkHubSocket.shutdown(socket.SHUT_RDWR)
+    networkHubSocket.close
+
 setup()
 connectToNetworkHub()
 while(1):
-    print("Waiting...")
-    unpackedCommand = networkHubSocket.recv(struct.calcsize(INPUT_FORMAT))
-    command = struct.unpack(INPUT_FORMAT, unpackedCommand)
-    print(command)
-    leftPower = command[0]
-    rightPower = command[1]
-    runMotors(leftPower, rightPower)
+    try:
+        print("Waiting...")
+        unpackedCommand = networkHubSocket.recv(struct.calcsize(INPUT_FORMAT))
+        command = struct.unpack(INPUT_FORMAT, unpackedCommand)
+        print(command)
+        leftPower = command[0]
+        rightPower = command[1]
+        runMotors(leftPower, rightPower)
+    except KeyboardInterrupt:
+        closeConnections()
+        break
+    except:
+        print('Program Error')
+        closeConnections()
+        connectToNetworkHub()
         
 
 

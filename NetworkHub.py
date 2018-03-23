@@ -20,8 +20,10 @@ SERVO_COMMAND_OP_CODE = 's'
 def connectToController():
     global controllerSocket
     controllerSocket = socket.socket()
-    hostname = "192.168.2.3"
-    port = 1234
+    #hostname = "192.168.2.3"
+    hostname = "74.195.243.108"
+    #port = 1234
+    port = 5001
     while(1):
         print("Connecting to controller")
         try:
@@ -85,18 +87,38 @@ def sendStopCommand():
     print("Stopping")
     controllerSocket.shutdown(socket.SHUT_RDWR)
     controllerSocket.close
-    
-connectToController()
-setupMotorProgramConnection()
-setupServoProgramConnection()
+
+def setupConnections():
+    connectToController()
+    setupMotorProgramConnection()
+    setupServoProgramConnection()
+
+def closeConnections():
+    global controllerSocket
+    global motorServerSocket
+    global motorSocket
+    global servoServerSocket
+    global servoSocket
+    controllerSocket.shutdown(socket.SHUT_RDWR)
+    controllerSocket.close
+    motorServerSocket.shutdown(socket.SHUT_RDWR)
+    motorServerSocket.close
+    motorSocket.shutdown(socket.SHUT_RDWR)
+    motorSocket.close
+    servoServerSocket.shutdown(socket.SHUT_RDWR)
+    servoServerSocket.close
+    servoSocket.shutdown(socket.SHUT_RDWR)
+    servoSocket.close
+
+setupConnections()
 while(1):
     try:
-        #timer = Timer(3, sendStopCommand)
-        #timer.start()
-        #print('Waiting for command...')
+        timer = Timer(3, sendStopCommand)
+        timer.start()
+        print('Waiting for command...')
         packedCommand = controllerSocket.recv(struct.calcsize(INPUT_FORMAT))
-        #print('Received command')
-        #timer.cancel()
+        print('Received command')
+        timer.cancel()
         #controllerSocket.send("H")
         command = struct.unpack(INPUT_FORMAT, packedCommand)
         opCode = command[0]
@@ -116,15 +138,17 @@ while(1):
     except KeyboardInterrupt:
         print("Program Ended")
         GPIO.cleanup()
-        controllerSocket.close
+        closeConnections
         break
     except socket.error:
         print("Lost Connection")
-        controllerSocket.close
-        connectToController()
+        closeConnections()
+        setupConnections()
+        #break
     except:
         print("Program Error")
-        controllerSocket.close
-        connectToController()
+        closeConnections()
+        setupConnections()
+        #break
         
         

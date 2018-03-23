@@ -10,7 +10,7 @@ import struct
 # ===========================================================================
 
 # Initialise the PWM device using the default address
-pwm = PWM(0x40)
+#pwm = PWM(0x40)
 # Note if you'd like more debug output you can instead run:
 #pwm = PWM(0x40, debug=True)
 
@@ -222,16 +222,34 @@ def connectToNetworkHub():
     networkHubSocket = socket.socket()
     hostname = socket.gethostname()
     port = 2001
-    print("Connecting to network hub")
+    '''print("Connecting to network hub")
     networkHubSocket.connect((hostname, port))
-    print("Connected to network hub")
+    print("Connected to network hub")'''
+    while(1):
+        print("Connecting to network hub")
+        try:
+            networkHubSocket.connect((hostname, port))
+            print('Connected to network hub')
+            break
+        except socket.error as e:
+            print('Cant connect to network hub')
+            networkHubSocket.close
+        except KeyboardInterrupt:
+            print("Program Ended")
+            networkHubSocket.close
+            sys.exit()
+
+def closeConnections():
+    networkHubSocket.shutdown(socket.SHUT_RDWR)
+    networkHubSocket.close
 
 connectToNetworkHub()
-motorPwm = PWM(0x40)
-motorPwm.setPWMFreq(50) # Set frequency to 50 Hz
-initialArmPos()
+#motorPwm = PWM(0x40)
+#motorPwm.setPWMFreq(50) # Set frequency to 50 Hz
+#initialArmPos()
 while(1):
     try:
+        print('Waiting...')
         packedCommand = networkHubSocket.recv(struct.calcsize(SERVO_FORMAT))
         command = struct.unpack(SERVO_FORMAT, packedCommand)
         opCode = command[0]
@@ -240,23 +258,27 @@ while(1):
             servoCommand = command[1]
             if (servoCommand == REST_ARM_COMMAND):
                 print('Resting arm')
-                restArm()
+                #restArm()
             elif (servoCommand == INITIATE_ARM_COMMAND):
                 print('Initiating arm')
-                initiateArm()
+                #initiateArm()
             elif (servoCommand == GRABBING_ARM_COMMAND):
                 print('Arm ready to grab')
-                grabbingArm()
+                #grabbingArm()
             elif (servoCommand == IN_HOLE_COMMAND):
                 print("Ready to put in hole")
             elif (servoCommand == STOP_COMMAND):
                 print('Servo motors stopped')
-                stopMotors()
+                #stopMotors()
         elif(opCode == SERVO_CONTROL):
             servoChannel = command[1]
             servoPosition = command[2]
             print('Controlling servo ' + str(servoChannel) + ' at position ' + str(servoPosition))
-            runMotorSlow(servoChannel, servoPosition)
+            #runMotorSlow(servoChannel, servoPosition)
     except KeyboardInterrupt:
-        stopMotors()
+        closeConnections()
         break
+    except:
+        print('Program Error')
+        closeConnections()
+        connectToNetworkHub()
