@@ -4,6 +4,7 @@ from Adafruit_PWM_Servo_Driver import PWM
 import time
 import socket
 import struct
+from threading import Timer
 
 # ===========================================================================
 # Example Code
@@ -226,6 +227,7 @@ def connectToNetworkHub():
     networkHubSocket.connect((hostname, port))
     print("Connected to network hub")'''
     while(1):
+        time.sleep(0.5)
         print("Connecting to network hub")
         try:
             networkHubSocket.connect((hostname, port))
@@ -239,9 +241,20 @@ def connectToNetworkHub():
             networkHubSocket.close
             sys.exit()
 
+def stopCommand():
+    closeConnections()
+    connectToNetworkHub()
+
 def closeConnections():
-    networkHubSocket.shutdown(socket.SHUT_RDWR)
-    networkHubSocket.close
+    global netowkHubSocket
+    shutdownSocket(networkHubSocket)
+
+def shutdownSocket(socket):
+    try:
+        socket.shutdown(socket.SHUT_RDWR)
+        socket.close
+    except:
+        print("Socket already closed")
 
 connectToNetworkHub()
 #motorPwm = PWM(0x40)
@@ -249,8 +262,11 @@ connectToNetworkHub()
 #initialArmPos()
 while(1):
     try:
+        #timer = Timer(3, stopCommand)
+        #timer.start()
         print('Waiting...')
         packedCommand = networkHubSocket.recv(struct.calcsize(SERVO_FORMAT))
+        #timer.cancel()
         command = struct.unpack(SERVO_FORMAT, packedCommand)
         opCode = command[0]
         print(command)
@@ -276,9 +292,9 @@ while(1):
             print('Controlling servo ' + str(servoChannel) + ' at position ' + str(servoPosition))
             #runMotorSlow(servoChannel, servoPosition)
     except KeyboardInterrupt:
-        closeConnections()
+        #closeConnections()
         break
     except:
         print('Program Error')
-        closeConnections()
+        #closeConnections()
         connectToNetworkHub()

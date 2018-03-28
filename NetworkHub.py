@@ -1,8 +1,10 @@
 import socket
 import struct
 from threading import Timer
+import time
 
 controllerSocket = None
+networkHubSocket = None
 motorServerSocket = None
 servoServerSocket = None
 motorSocket = None
@@ -17,26 +19,27 @@ MOTOR_OP_CODE = 'm'
 SERVO_CONTROL_OP_CODE = 'c'
 SERVO_COMMAND_OP_CODE = 's'
 
-def connectToController():
+def setupControllerConnection():
     global controllerSocket
-    controllerSocket = socket.socket()
-    #hostname = "192.168.2.3"
-    hostname = "74.195.243.108"
-    #port = 1234
-    port = 5001
+    global networkHubSocket
+    networkHubSocket = socket.socket()
+    hostname = "192.168.2.2"
+    port = 1234
+    networkHubSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     while(1):
-        print("Connecting to controller")
+        time.sleep(0.5)
+        print('Creating network hub connection')
         try:
-            controllerSocket.connect((hostname, port))
-            print('Connected to controller')
+            networkHubSocket.bind((hostname, port))
+            networkHubSocket.listen(100)
+            print('Created network hub connection')
             break
-        except socket.error as e:
-            print('Cant connect to controller')
-            controllerSocket.close
-        except KeyboardInterrupt:
-            print("Program Ended")
-            controllerSocket.close
-            sys.exit()
+        except:
+            print('Couldnt create network hub connection')
+    print('Created network hub connection')
+    controllerSocket, addr = networkHubSocket.accept()
+    print("Controller connected")
+    
 
 def setupMotorProgramConnection():
     global motorServerSocket
@@ -44,12 +47,17 @@ def setupMotorProgramConnection():
     motorServerSocket = socket.socket()
     hostname = socket.gethostname()
     port = 4001
-    motorServerSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    motorServerSocket.bind((hostname, port))
-    motorServerSocket.listen(100)
-    print('Waiting for motor program')
+    while(1):
+        print('Waiting for motor program')
+        try:
+            motorServerSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            motorServerSocket.bind((hostname, port))
+            motorServerSocket.listen(100)
+            print("Created motor program connection")
+            break
+        except:
+            print('Couldnt make motor program connection')
     motorSocket, addr = motorServerSocket.accept()
-    print("Motor program connected")
 
 def setupServoProgramConnection():
     global servoServerSocket
@@ -57,18 +65,24 @@ def setupServoProgramConnection():
     servoServerSocket = socket.socket()
     hostname = socket.gethostname()
     port = 2001
-    servoServerSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    servoServerSocket.bind((hostname, port))
-    servoServerSocket.listen(100)
-    print('Waiting for servo program')
+    while(1):
+        print('Waiting for servo program')
+        try:
+            servoServerSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            servoServerSocket.bind((hostname, port))
+            servoServerSocket.listen(100)
+            print("Created servo program connection")
+            break
+        except:
+            print('Couldnt make servo program connection')
     servoSocket, addr = servoServerSocket.accept()
-    print("Servo program connected")
 
-def sendMotorCommand(unpackedCommand):
+def sendMotorCommand(leftSpeed, rightSpeed):
     global motorSocket
     leftMotorSpeed = command[1]
     rightMotorSpeed = command[2]
-    motorCommand = struct.pack(MOTOR_FORMAT, leftMotorSpeed, rightMotorSpeed)
+    #print('Right motor speed: ' + str(rightSpeed) + 'Left motor speed' + str(leftSpeed))
+    motorCommand = struct.pack(MOTOR_FORMAT, leftSpeed, rightSpeed)
     motorSocket.send(motorCommand)
 
 def sendServoCommand(opCode, unpackedCommand):
@@ -85,47 +99,75 @@ def sendServoControl(opCode, unpackedCommand):
 def sendStopCommand():
     global controllerSocket
     print("Stopping")
-    controllerSocket.shutdown(socket.SHUT_RDWR)
-    controllerSocket.close
+    closeConnections()
 
 def setupConnections():
-    connectToController()
     setupMotorProgramConnection()
     setupServoProgramConnection()
+    setupControllerConnection()
+
+def stopMotors():
+    sendMotorCommand(0, 0)
 
 def closeConnections():
+    global networkHubSocket
     global controllerSocket
     global motorServerSocket
     global motorSocket
     global servoServerSocket
     global servoSocket
-    controllerSocket.shutdown(socket.SHUT_RDWR)
-    controllerSocket.close
-    motorServerSocket.shutdown(socket.SHUT_RDWR)
-    motorServerSocket.close
-    motorSocket.shutdown(socket.SHUT_RDWR)
-    motorSocket.close
-    servoServerSocket.shutdown(socket.SHUT_RDWR)
-    servoServerSocket.close
-    servoSocket.shutdown(socket.SHUT_RDWR)
-    servoSocket.close
+    try:
+        networkHubSocket.shutdown(socket.SHUT_RDWR)
+        networkHubSocket.close
+    except:
+        print('Controller socket already closed')
+    try:
+        controllerSocket.shutdown(socket.SHUT_RDWR)
+        controllerSocket.close
+    except:
+        print('Controller socket already closed')
+    '''try:
+        motorSocket.shutdown(socket.SHUT_RDWR)
+        motorSocket.close
+    except:
+        print('Motor socket already closed')
+    try:
+        servoSocket.shutdown(socket.SHUT_RDWR)
+        servoSocket.close
+    except:
+        print('Servo socket already closed')
+    try:
+        motorServerSocket.shutdown(socket.SHUT_RDWR)
+        motorServerSocket.close
+    except:
+        print('Motor server socket already closed')
+    try:
+        servoServerSocket.shutdown(socket.SHUT_RDWR)
+        servoServerSocket.close
+    except:
+        print('Servo server socket already closed')'''
 
-setupConnections()
+
+setupMotorProgramConnection()
+setupServoProgramConnection()
+#setupConnections()
+setupControllerConnection()
 while(1):
     try:
-        timer = Timer(3, sendStopCommand)
+        timer = Timer(1, sendStopCommand)
         timer.start()
         print('Waiting for command...')
         packedCommand = controllerSocket.recv(struct.calcsize(INPUT_FORMAT))
         print('Received command')
         timer.cancel()
-        #controllerSocket.send("H")
         command = struct.unpack(INPUT_FORMAT, packedCommand)
         opCode = command[0]
         #print('op code is ' + str(opCode))
         if(opCode == MOTOR_OP_CODE):
             print('Sending motor command')
-            sendMotorCommand(command)
+            leftMotorSpeed = command[1]
+            rightMotorSpeed = command[2]
+            sendMotorCommand(leftMotorSpeed, rightMotorSpeed)
             continue
         elif(opCode == SERVO_COMMAND_OP_CODE):
             print('Sending servo command')
@@ -137,18 +179,19 @@ while(1):
             continue
     except KeyboardInterrupt:
         print("Program Ended")
-        GPIO.cleanup()
-        closeConnections
+        stopMotors()
+        closeConnections()
         break
     except socket.error:
         print("Lost Connection")
+        stopMotors()
         closeConnections()
-        setupConnections()
-        #break
+        setupControllerConnection()
     except:
         print("Program Error")
+        stopMotors()
         closeConnections()
-        setupConnections()
-        #break
+        setupControllerConnection()
+
         
         

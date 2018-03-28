@@ -3,6 +3,7 @@ import time
 import socket
 import struct
 import sys
+from threading import Timer
 
 ENA = 4
 ENB = 16
@@ -89,6 +90,7 @@ def connectToNetworkHub():
     #networkHubSocket.connect((hostname, port))
     #print("Connected to network hub")
     while(1):
+        time.sleep(0.5)
         print("Connecting to network hub")
         try:
             networkHubSocket.connect((hostname, port))
@@ -120,26 +122,41 @@ def stopMotors():
     runMotor(MOTOR_2, 0)
 
 def closeConnections():
-    networkHubSocket.shutdown(socket.SHUT_RDWR)
-    networkHubSocket.close
+    global networkHubSocket
+    shutdownSocket(networkHubSocket)
+
+def stopCommand():
+    closeConnections()
+    connectToNetworkHub()
+
+def shutdownSocket(socket):
+    try:
+        socket.shutdown(socket.SHUT_RDWR)
+        socket.close
+    except:
+        print("Socket already closed")
 
 setup()
 connectToNetworkHub()
 while(1):
     try:
+        #timer = Timer(3, stopCommand)
+        #timer.start()
         print("Waiting...")
         unpackedCommand = networkHubSocket.recv(struct.calcsize(INPUT_FORMAT))
+        #timer.cancel()
         command = struct.unpack(INPUT_FORMAT, unpackedCommand)
         print(command)
         leftPower = command[0]
         rightPower = command[1]
         runMotors(leftPower, rightPower)
     except KeyboardInterrupt:
-        closeConnections()
+        stopMotors()
+        #closeConnections()
         break
     except:
         print('Program Error')
-        closeConnections()
+        #closeConnections()
         connectToNetworkHub()
         
 
