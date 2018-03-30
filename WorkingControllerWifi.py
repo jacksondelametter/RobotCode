@@ -6,13 +6,17 @@ import struct
 import threading
 
 analogData = b'm\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+stopThread = False
 
 def sendData():
     global analogData
-    
-    threading.Timer(0.1, sendData).start()
-    #print(analogData)
-    c.send(analogData)
+
+    if stopThread == False:
+        threading.Timer(0.1, sendData).start()
+        #print(analogData)
+        c.send(analogData)
+    else:
+        print("closing")
 
 def writeFunction(X,Y):
     global analogData
@@ -70,6 +74,7 @@ def joystickNumProc(X,Y):
 left = 0
 right = 0
 servoList = [0,4,5,6,7]
+servoCount = 0
 
 #pygame initialize and create controller
 pygame.init()
@@ -84,7 +89,7 @@ j.init()
 ##s.bind((hostname, port))
 ##s.listen(5)
 
-hostname = '192.168.2.2'
+hostname = '192.168.2.4'
 port = 1234
 c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 c.connect((hostname,port))
@@ -107,47 +112,36 @@ try:
             elif event.type == pygame.JOYBUTTONDOWN:
                 #this is R1
                 if event.button == 5:
-##                    left = 1
-##                    right =  0
                     data = struct.pack('c i i',b's', 1, 0)
                     c.send(data)
                 #this is L1
                 if event.button == 4:
-##                    left = 0
-##                    right =  0
                     data = struct.pack('c i i',b's', 0, 0)
                     #print("%s is data" % data)
                     c.send(data)
                 #this is R2
                 if event.button == 7:
-##                    left = 2
-##                    right =  0
                     data = struct.pack('c i i',b's', 2, 0)
                     c.send(data)
                 #this is L2
                 if event.button == 6:
-##                    left = 3
-##                    right =  0
                     data = struct.pack('c i i',b's', 3, 0)
                     c.send(data)
                 #this is square
                 if event.button == 0:
                     if servoCount != 4:
-                        print("add")
                         servoCount += 1
                     else:
-                        print("reset")
                         servoCount = 0
                     servo = servoList[servoCount]
                     print(servoCount)
                     print("current servo = %i" % servo)
                 #this is circle
                 if event.button == 2:
-##                    left = 4
-##                    right =  0
                     data = struct.pack('c i i',b's', 4, 0)
                     c.send(data)
                 if event.button == 3:
+                    stopThread = True
                     print("Closing")
                     #s.close
                     c.close
@@ -156,19 +150,18 @@ try:
                     break
             #checks directional pad on controller
             elif event.type == pygame.JOYHATMOTION:
-##                if event.value[0] == -1:
-##                    data = struct.pack('c i i',b'c', servo, -30)
-##                    c.send(data)
-##                if event.value[0] == 1:
-##                    data = struct.pack('c i i',b'c', servo, 30)
-##                    c.send(data)
-##                if event.value[1] == -1:
-##                    data = struct.pack('c i i',b'c', servo, -10)
-##                    c.send(data)
-##                if event.value[1] == 1:
-##                    data = struct.pack('c i i',b'c', servo, 10)
-##                    c.send(data)
-                print("Broken")
+                if event.value[0] == -1:
+                    data = struct.pack('c i i',b'c', servo, -30)
+                    c.send(data)
+                if event.value[0] == 1:
+                    data = struct.pack('c i i',b'c', servo, 30)
+                    c.send(data)
+                if event.value[1] == -1:
+                    data = struct.pack('c i i',b'c', servo, -10)
+                    c.send(data)
+                if event.value[1] == 1:
+                    data = struct.pack('c i i',b'c', servo, 10)
+                    c.send(data)
 except KeyboardInterrupt:
     print("EXITING NOW")
     j.quit()
