@@ -1,0 +1,4 @@
+#!/bin/bash
+xterm -hold -e python NetworkHub.py &
+xterm -hold -e python MotorProgramv4.py &
+xterm -hold -e python Ada*/Adafruit_P*/ServoHub.py 

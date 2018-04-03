@@ -2,6 +2,7 @@ import socket
 import struct
 from threading import Timer
 import time
+#import netifaces
 
 controllerSocket = None
 networkHubSocket = None
@@ -23,7 +24,9 @@ def setupControllerConnection():
     global controllerSocket
     global networkHubSocket
     networkHubSocket = socket.socket()
-    hostname = "192.168.2.2"
+    hostname = '192.168.2.4'
+    #hostname = socket.gethostbyname(socket.gethostname());
+    print(hostname)
     port = 1234
     networkHubSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     while(1):

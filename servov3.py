@@ -21,14 +21,13 @@ currentPos1 = 0
 currentPos2 = 0
 currentPos3 = 0
 currentPos4 = 0
-CHOOSE_MOTOR_COMMAND = 'i'
+CHOOSE_MOTOR_COMMAND = 'u'
 REST_ARM_COMMAND = 'q'
 INITIATE_ARM_COMMAND = 'w'
 GRABBING_ARM_COMMAND = 'e'
-PUT_IN_DOWN_INC_HOLE_COMMAND = 't'
-PUT_IN_UP_INC_HOLE_COMMAND = 'y'
 PUT_IN_HOLE_COMMAND = 'r'
-STOP_COMMAND = 'u'
+CARRY_PAYLOAD_COMMAND = 't'
+STOP_COMMAND = 'y'
 INVALID_MOTOR = -1
 MOTOR_0 = 0
 MOTOR_1 = 4
@@ -165,16 +164,31 @@ def restArm():
     runMotorSlow(MOTOR_0, 500 - getMotorPosition(MOTOR_0))
     stopMotors()
 
+def carryPayload():
+    # Used for laying arm back down from arm ready position
+    '''
+    First motor1 to 360, motor2 to 300, motor0 to 500
+    '''
+    runMotorSlow(MOTOR_4, 330 - getMotorPosition(MOTOR_4))
+    time.sleep(0.5)
+    runMotorSlow(MOTOR_3, 320 - getMotorPosition(MOTOR_3))
+    time.sleep(0.5)
+    runMotorSlow(MOTOR_2, 500 - getMotorPosition(MOTOR_2))
+    time.sleep(0.5)
+    runMotorSlow(MOTOR_1, 360 - getMotorPosition(MOTOR_1))
+    time.sleep(0.5)
+    runMotorSlow(MOTOR_0, 500 - getMotorPosition(MOTOR_0))
+
 def initialArmPos():
     # Used for initial arm position
     runMotor(MOTOR_0, 500)
     runMotor(MOTOR_1, 360)
-    runMotor(MOTOR_2, 300)
+    runMotor(MOTOR_2, 290)
     runMotor(MOTOR_3, 320)
     runMotor(MOTOR_4, 330)
     setMotorPosition(MOTOR_0, 500)
     setMotorPosition(MOTOR_1, 360)
-    setMotorPosition(MOTOR_2, 300)
+    setMotorPosition(MOTOR_2, 290)
     setMotorPosition(MOTOR_3, 320)
     setMotorPosition(MOTOR_4, 330)
     
@@ -202,7 +216,7 @@ def grabbingArm():
     time.sleep(0.5)
     runMotorSlow(MOTOR_1, 160 - getMotorPosition(MOTOR_1))
     time.sleep(0.5)
-    runMotorSlow(MOTOR_0, 400 - getMotorPosition(MOTOR_0))
+    runMotorSlow(MOTOR_0, 410 - getMotorPosition(MOTOR_0))
     time.sleep(0.5)
     runMotorSlow(MOTOR_4, 230 - getMotorPosition(MOTOR_4))
         
@@ -252,10 +266,8 @@ while True:
             grabbingArm()
         elif(command == PUT_IN_HOLE_COMMAND):
             putInHole()
-        elif(command == PUT_IN_UP_INC_HOLE_COMMAND):
-            putInUPHole()
-        elif(command == PUT_IN_DOWN_INC_HOLE_COMMAND):
-            putInDownHole()
+        elif(command == CARRY_PAYLOAD_COMMAND):
+            carryPayload()
         elif (command == STOP_COMMAND):
             stopMotors()
         else:

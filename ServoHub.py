@@ -11,9 +11,9 @@ from threading import Timer
 # ===========================================================================
 
 # Initialise the PWM device using the default address
-#pwm = PWM(0x40)
+pwm = PWM(0x40)
 # Note if you'd like more debug output you can instead run:
-#pwm = PWM(0x40, debug=True)
+pwm = PWM(0x40, debug=True)
 
 servoMin = 160  # Min pulse length out of 4096
 servoMax = 500  # Max pulse length out of 4096
@@ -187,6 +187,7 @@ def initialArmPos():
     runMotor(MOTOR_2, 300)
     runMotor(MOTOR_3, 320)
     runMotor(MOTOR_4, 330)
+    stopMotors()
     setMotorPosition(MOTOR_0, 500)
     setMotorPosition(MOTOR_1, 360)
     setMotorPosition(MOTOR_2, 300)
@@ -256,10 +257,39 @@ def shutdownSocket(socket):
     except:
         print("Socket already closed")
 
+def putInUpHole():
+    # Used to put block into hole
+    '''
+    First motor0 to 480, motor1 to 200, motor2 to 480
+    '''
+    runMotorSlow(MOTOR_0, 480 - getMotorPosition(MOTOR_0))
+    time.sleep(0.5)
+    runMotorSlow(MOTOR_1, 210 - getMotorPosition(MOTOR_1))
+    time.sleep(0.5)
+    runMotorSlow(MOTOR_2, 480 - getMotorPosition(MOTOR_2))
+    
+def putInHole():
+    runMotorSlow(MOTOR_0, 460 - getMotorPosition(MOTOR_0))
+    time.sleep(0.5)
+    runMotorSlow(MOTOR_1, 240 - getMotorPosition(MOTOR_1))
+    time.sleep(0.5)
+    runMotorSlow(MOTOR_2, 500 - getMotorPosition(MOTOR_2))
+    time.sleep(0.5)
+
+def putInDownHole():
+    runMotorSlow(MOTOR_0, 400 - getMotorPosition(MOTOR_0))
+    time.sleep(0.5)
+    runMotorSlow(MOTOR_1, 270 - getMotorPosition(MOTOR_1))
+    time.sleep(0.5)
+    runMotorSlow(MOTOR_2, 430 - getMotorPosition(MOTOR_2))
+    time.sleep(0.5)
+    runMotorSlow(MOTOR_3, 395 - getMotorPosition(MOTOR_3))
+    time.sleep(0.5)
+
 connectToNetworkHub()
-#motorPwm = PWM(0x40)
-#motorPwm.setPWMFreq(50) # Set frequency to 50 Hz
-#initialArmPos()
+motorPwm = PWM(0x40)
+motorPwm.setPWMFreq(50) # Set frequency to 50 Hz
+initialArmPos()
 while(1):
     try:
         #timer = Timer(3, stopCommand)
@@ -274,23 +304,24 @@ while(1):
             servoCommand = command[1]
             if (servoCommand == REST_ARM_COMMAND):
                 print('Resting arm')
-                #restArm()
+                restArm()
             elif (servoCommand == INITIATE_ARM_COMMAND):
                 print('Initiating arm')
-                #initiateArm()
+                initiateArm()
             elif (servoCommand == GRABBING_ARM_COMMAND):
                 print('Arm ready to grab')
-                #grabbingArm()
+                grabbingArm()
             elif (servoCommand == IN_HOLE_COMMAND):
                 print("Ready to put in hole")
+                putInHole()
             elif (servoCommand == STOP_COMMAND):
                 print('Servo motors stopped')
-                #stopMotors()
+                stopMotors()
         elif(opCode == SERVO_CONTROL):
             servoChannel = command[1]
             servoPosition = command[2]
             print('Controlling servo ' + str(servoChannel) + ' at position ' + str(servoPosition))
-            #runMotorSlow(servoChannel, servoPosition)
+            runMotorSlow(servoChannel, servoPosition)
     except KeyboardInterrupt:
         #closeConnections()
         break
