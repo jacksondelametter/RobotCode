@@ -2,7 +2,6 @@ import socket
 import struct
 from threading import Timer
 import time
-#import netifaces
 
 controllerSocket = None
 networkHubSocket = None
@@ -23,9 +22,9 @@ SERVO_COMMAND_OP_CODE = 's'
 def setupControllerConnection():
     global controllerSocket
     global networkHubSocket
+    global motorServerSocket
     networkHubSocket = socket.socket()
     hostname = '192.168.2.4'
-    #hostname = socket.gethostbyname(socket.gethostname());
     print(hostname)
     port = 1234
     networkHubSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -153,7 +152,6 @@ def closeConnections():
 
 setupMotorProgramConnection()
 setupServoProgramConnection()
-#setupConnections()
 setupControllerConnection()
 while(1):
     try:
