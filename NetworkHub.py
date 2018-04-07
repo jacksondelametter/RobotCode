@@ -24,7 +24,7 @@ def setupControllerConnection():
     global networkHubSocket
     global motorServerSocket
     networkHubSocket = socket.socket()
-    hostname = '192.168.2.4'
+    hostname = '192.168.2.2'
     print(hostname)
     port = 1234
     networkHubSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

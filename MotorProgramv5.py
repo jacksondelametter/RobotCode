@@ -226,7 +226,6 @@ while(1):
     except:
         print('Program Error')
         stopMotors()
-        break
         
 
 

@@ -328,4 +328,4 @@ while(1):
     except:
         print('Program Error')
         #closeConnections()
-        connectToNetworkHub()
+        #connectToNetworkHub()
