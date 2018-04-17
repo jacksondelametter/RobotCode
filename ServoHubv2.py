@@ -30,7 +30,7 @@ MOTOR_0 = 0
 MOTOR_1 = 4
 MOTOR_2 = 5
 MOTOR_3 = 6
-MOTOR_4 = 7
+MOTOR_4 = 2
 MOTOR_DELAY = 0.0005
 networkHubSocket = None
 
@@ -47,7 +47,7 @@ SERVO_COMMAND = 's'
 SERVO_CONTROL = 'c'
 GRIP_OPEN = False
 
-#gripper 330 closed- 230 open
+#gripper 380 closed- 320 open
 
 def chooseMotor():
     global activeMotor
@@ -118,12 +118,12 @@ def runMotorSlow(activeMotor, incrementPos):
     if (currentPos == INVALID_MOTOR):
         print("Invalid active motor")
         return
-    if(activeMotor == MOTOR_4 and destinationValue <= 230):
-        # motor 4 is lower than 230
-        destinationValue = 230
-    elif(activeMotor == MOTOR_4 and destinationValue >= 330):
-        # motor 4 is higher than 330
-        destinationValue = 330
+    if(activeMotor == MOTOR_4 and destinationValue <= 320):
+        # motor 4 is lower than 320
+        destinationValue = 320
+    elif(activeMotor == MOTOR_4 and destinationValue >= 400):
+        # motor 4 is higher than 400
+        destinationValue = 400
     elif(destinationValue <= 160):
         # motor is lower than 160
         destinationValue = 160
@@ -165,7 +165,7 @@ def restArm():
     time.sleep(0.5)
     runMotorSlow(MOTOR_2, 280 - getMotorPosition(MOTOR_2))
     time.sleep(0.5)
-    runMotorSlow(MOTOR_4, 330 - getMotorPosition(MOTOR_4))
+    runMotorSlow(MOTOR_4, 380 - getMotorPosition(MOTOR_4))
     ARM_OPEN = False
     stopMotors()
 
@@ -175,12 +175,12 @@ def initialArmPos():
     runMotor(MOTOR_1, 500)
     runMotor(MOTOR_2, 280)
     runMotor(MOTOR_3, 160)
-    runMotor(MOTOR_4, 330)
+    runMotor(MOTOR_4, 380)
     setMotorPosition(MOTOR_0, 320)
     setMotorPosition(MOTOR_1, 500)
     setMotorPosition(MOTOR_2, 280)
     setMotorPosition(MOTOR_3, 160)
-    setMotorPosition(MOTOR_4, 330)
+    setMotorPosition(MOTOR_4, 380)
     
 def initiateArm():
     '''
@@ -192,7 +192,7 @@ def initiateArm():
     time.sleep(0.5)
     runMotorSlow(MOTOR_2, 350 - getMotorPosition(MOTOR_2))
     time.sleep(0.5)
-    runMotorSlow(MOTOR_3, 480 - getMotorPosition(MOTOR_3))
+    runMotorSlow(MOTOR_3, 320 - getMotorPosition(MOTOR_3))
     time.sleep(0.5)
 
 def grabbingArm():
@@ -208,7 +208,7 @@ def grabbingArm():
     time.sleep(0.5)
     runMotorSlow(MOTOR_3, 320 - getMotorPosition(MOTOR_3))
     time.sleep(0.5)
-    runMotorSlow(MOTOR_4, 230 - getMotorPosition(MOTOR_4))
+    runMotorSlow(MOTOR_4, 320 - getMotorPosition(MOTOR_4))
 
 def openCloseGrip():
     # Used for laying arm back down from arm ready position
@@ -218,11 +218,11 @@ def openCloseGrip():
     global GRIP_OPEN
     if GRIP_OPEN:
         # Arm is open
-        runMotorSlow(MOTOR_4, 310 - getMotorPosition(MOTOR_4))
+        runMotorSlow(MOTOR_4, 400 - getMotorPosition(MOTOR_4))
         time.sleep(0.5)
     else:
         # Arm is closed
-        runMotorSlow(MOTOR_4, 230 - getMotorPosition(MOTOR_4))
+        runMotorSlow(MOTOR_4, 320 - getMotorPosition(MOTOR_4))
         time.sleep(0.5)
         runMotor(MOTOR_4, 0)
     GRIP_OPEN = not GRIP_OPEN

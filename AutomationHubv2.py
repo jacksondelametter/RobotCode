@@ -6,15 +6,15 @@ GPIO.setmode(GPIO.BCM)
 
 #global variables
 
-LEFT = 0
-RIGHT = 1
-FRONT = (18, 23)
+LEFT = (12, 13)
+RIGHT = (5, 6)
+FRONT = (6, 9)
 BACK = 3
 
 FRONT_SEN_THRESH = 10
 BACK_SEN_THRESH = 10
-LEFT_SEN_THRESH = 10
-RIGHT_SEN_THRESH = 10
+LEFT_SEN_THRESH = 20
+RIGHT_SEN_THRESH = 20
 
 motorServerSocket = None
 motorSocket = None
@@ -26,9 +26,12 @@ motorSocket = None
 ##  driveForward(speed)
 
 def setupSensors():
-    GPIO.setup(FRONT[0],GPIO.OUT)
-    GPIO.setup(FRONT[1],GPIO.IN)
-    GPIO.output(FRONT[0], False)
+    GPIO.setup(RIGHT[0],GPIO.OUT)
+    GPIO.setup(RIGHT[1],GPIO.IN)
+    GPIO.output(RIGHT[0], False)
+    GPIO.setup(LEFT[0],GPIO.OUT)
+    GPIO.setup(LEFT[1],GPIO.IN)
+    GPIO.output(LEFT[0], False)
     print('Settings up sensors')
     time.sleep(2)
 
@@ -52,7 +55,6 @@ def sensorRead(senNum):
     pulse = pulse_end - pulse_start
     distance = pulse * 17150
     distance = round(distance, 2)
-    print distance, "cm"
     return distance
 
 def setupMotorProgramConnection():
@@ -87,11 +89,19 @@ while (1):
     right = True
     left = True
     back = True
-    frontSensor = sensorRead(FRONT)
-    if frontSensor > FRONT_SEN_THRESH:
-        front = True
+    rightSensor = sensorRead(RIGHT)
+    leftSensor = sensorRead(LEFT)
+    if rightSensor < RIGHT_SEN_THRESH:
+        print('Right to low')
+        right = False
     else:
-        front = False
+        right = True
+
+    if leftSensor < LEFT_SEN_THRESH:
+        print('left to low')
+        left = False
+    else:
+        left = True
     '''if sensorRead(RIGHT) < 10.17:
         right = True
     else:
@@ -104,6 +114,7 @@ while (1):
         back = True
     else:
         back = False'''
+    print('Right Sensor: ' + str(rightSensor) + '\n' + 'Left Sensor: ' + str(leftSensor))
     data = struct.pack('? ? ? ?', front, back, right, left)
     motorSocket.send(data)
     time.sleep(0.5)

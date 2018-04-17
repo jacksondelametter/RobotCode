@@ -7,11 +7,11 @@ import sys
 from threading import Timer
 
 ENA = 4
-ENB = 16
+ENB = 23
 IN1 = 17
 IN2 = 18
-IN3 = 12
-IN4 = 13
+IN3 = 27
+IN4 = 22
 motot1 = None
 motor2 = None
 networkHubSocket = None
@@ -28,7 +28,7 @@ backSensorClear = True
 rightSensorClear = True
 leftSensorClear = True
 
-INPUT_FORMAT = 'i i'
+INPUT_FORMAT = 'i i ?'
 AUTOMATION_FORMAT = '? ? ? ?'
 
 def setup():
@@ -67,7 +67,7 @@ def moveBackward():
     motor2.start(80)
     
 
-def runMotors(leftPower, rightPower):
+def runMotors(leftPower, rightPower, sensorsOn):
     global motor1
     global motor2
     global frontSensorClear
@@ -76,36 +76,37 @@ def runMotors(leftPower, rightPower):
     global leftSensorClear
     absRightPower = abs(rightPower)
     absLeftPower = abs(leftPower)
-    if (rightPower > 0 and rightPower == leftPower and not frontSensorClear):
-        # Motors trying to go front and sensor not clear
-        print('Front sensors not clear')
-        leftPower = 0
-        rightPower = 0
-    if (rightPower < 0 and rightPower == leftPower and not backSensorClear):
-        # Motors trying to go back and sensor not clear
-        print('Back sensors not clear')
-        leftPower = 0
-        rightPower = 0
-    elif (absRightPower < absLeftPower and not rightSensorClear):
-        # Motors trying to turn right and right sensor not clear
-        print('Right sensor not clear')
-        leftPower = 0
-        rightPower = 0
-    elif (absRightPower > absLeftPower and not leftSensorClear):
-        # Motors trying to turn left and left sensor not clear
-        print('Left sensor not clear')
-        leftPower = 0
-        rightPower = 0
-    elif (rightPower < leftPower and absRightPower == absLeftPower and not rightSensorClear):
-        # Motors are spinning right and right sensor not clear
-        print('Right sensor not clear')
-        leftPower = 0
-        rightPower = 0
-    elif (rightPower > leftPower and absRightPower == absLeftPower and not leftSensorClear):
-        # Motors are spinning left and left sensor not clear
-        print('left sensor not clear')
-        leftPower = 0
-        rightPower = 0
+    if(sensorsOn):
+        if (rightPower > 0 and rightPower == leftPower and not frontSensorClear):
+            # Motors trying to go front and sensor not clear
+            print('Front sensors not clear')
+            leftPower = 0
+            rightPower = 0
+        if (rightPower < 0 and rightPower == leftPower and not backSensorClear):
+            # Motors trying to go back and sensor not clear
+            print('Back sensors not clear')
+            leftPower = 0
+            rightPower = 0
+        elif (absRightPower < absLeftPower and not rightSensorClear):
+            # Motors trying to turn right and right sensor not clear
+            print('Right sensor not clear')
+            leftPower = 0
+            rightPower = 0
+        elif (absRightPower > absLeftPower and not leftSensorClear):
+            # Motors trying to turn left and left sensor not clear
+            print('Left sensor not clear')
+            leftPower = 0
+            rightPower = 0
+        elif (rightPower < leftPower and absRightPower == absLeftPower and not rightSensorClear):
+            # Motors are spinning right and right sensor not clear
+            print('Right sensor not clear')
+            leftPower = 0
+            rightPower = 0
+        elif (rightPower > leftPower and absRightPower == absLeftPower and not leftSensorClear):
+            # Motors are spinning left and left sensor not clear
+            print('left sensor not clear')
+            leftPower = 0
+            rightPower = 0
         
     if (leftPower >= 0):
         GPIO.output(IN1, GPIO.HIGH)
@@ -180,7 +181,7 @@ def chooseMotor():
         activeMotor = MOTOR_0
 
 def stopMotors():
-    runMotors(0, 0)
+    runMotors(0, 0, False)
 
 def closeConnections():
     global networkHubSocket
@@ -211,7 +212,8 @@ while(1):
                 print(command)
                 leftPower = command[0]
                 rightPower = command[1]
-                runMotors(leftPower, rightPower)
+                sensorsOn = command[2]
+                runMotors(leftPower, rightPower, sensorsOn)
             elif socket is automationHubSocket:
                 packedCommand = socket.recv(struct.calcsize(AUTOMATION_FORMAT))
                 command = struct.unpack(AUTOMATION_FORMAT, packedCommand)
