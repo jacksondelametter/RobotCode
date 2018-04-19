@@ -1,4 +1,7 @@
 #!/bin/bash
-xterm -hold -e python NetworkHub.py &
-xterm -hold -e python MotorProgramv4.py &
-xterm -hold -e python Ada*/Adafruit_P*/ServoHub.py 
+sudo pkill uv4l
+sudo uv4l -nopreview --auto-video_nr --driver raspicam --encoding mjpeg --width 640 --height 480 --framerate 20 --server-option '--port=9090' --server-option '--max-queued-connections=30' --server-option '--max-streams=25' --server-option '--max-threads=29'
+xterm -hold -e python NetworkHubv2.py &
+xterm -hold -e python MotorProgramv7.py &
+xterm -hold -e python AutomationHubv3.py &
+xterm -hold -e python Ada*/Adafruit_P*/ServoHubv2.py 

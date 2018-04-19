@@ -36,7 +36,7 @@ def setupControllerConnection():
     GPIO.output(LED1, GPIO.LOW)
     GPIO.output(LED2, GPIO.LOW)
     networkHubSocket = socket.socket()
-    hostname = '192.168.2.2'
+    hostname = '192.168.1.131'
     print(hostname)
     port = 1234
     networkHubSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -221,16 +221,19 @@ while(1):
     except KeyboardInterrupt:
         print("Program Ended")
         stopMotors()
+        #sendServoCommand(SERVO_COMMAND_OP_CODE, 0)
         closeConnections()
         break
     except socket.error:
         print("Lost Connection")
         stopMotors()
+        #sendServoCommand(SERVO_COMMAND_OP_CODE, 0)
         closeConnections()
         setupControllerConnection()
     except:
         print("Program Error")
         stopMotors()
+        #sendServoCommand(SERVO_COMMAND_OP_CODE, 0)
         closeConnections()
         setupControllerConnection()
 

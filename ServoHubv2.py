@@ -171,7 +171,7 @@ def restArm():
 
 def initialArmPos():
     # Used for initial arm position
-    runMotor(MOTOR_0, 320)
+    '''runMotor(MOTOR_0, 320)
     runMotor(MOTOR_1, 500)
     runMotor(MOTOR_2, 280)
     runMotor(MOTOR_3, 160)
@@ -180,7 +180,23 @@ def initialArmPos():
     setMotorPosition(MOTOR_1, 500)
     setMotorPosition(MOTOR_2, 280)
     setMotorPosition(MOTOR_3, 160)
-    setMotorPosition(MOTOR_4, 380)
+    setMotorPosition(MOTOR_4, 380)'''
+
+    runMotor(MOTOR_0, 360)
+    time.sleep(0.5)
+    runMotor(MOTOR_1, 160)
+    time.sleep(0.5)
+    runMotor(MOTOR_2, 350)
+    time.sleep(0.5)
+    runMotor(MOTOR_3, 320)
+    time.sleep(0.5)
+    runMotor(MOTOR_4, 330)
+    setMotorPosition(MOTOR_0, 360)
+    setMotorPosition(MOTOR_1, 160)
+    setMotorPosition(MOTOR_2, 350)
+    setMotorPosition(MOTOR_3, 320)
+    setMotorPosition(MOTOR_4, 330)
+    
     
 def initiateArm():
     '''
