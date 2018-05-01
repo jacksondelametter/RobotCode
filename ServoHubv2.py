@@ -118,12 +118,12 @@ def runMotorSlow(activeMotor, incrementPos):
     if (currentPos == INVALID_MOTOR):
         print("Invalid active motor")
         return
-    if(activeMotor == MOTOR_4 and destinationValue <= 320):
-        # motor 4 is lower than 320
-        destinationValue = 320
-    elif(activeMotor == MOTOR_4 and destinationValue >= 400):
-        # motor 4 is higher than 400
-        destinationValue = 400
+    if(activeMotor == MOTOR_4 and destinationValue <= 240):
+        # motor 4 is lower than 240
+        destinationValue = 240
+    elif(activeMotor == MOTOR_4 and destinationValue >= 300):
+        # motor 4 is higher than 290
+        destinationValue = 300
     elif(destinationValue <= 160):
         # motor is lower than 160
         destinationValue = 160
@@ -148,7 +148,7 @@ def stopMotors():
     runMotor(MOTOR_2, 0)
     runMotor(MOTOR_3, 0)
     runMotor(MOTOR_4, 0)
-    print('Motors stopped')
+    print('Servo Hub: Motors stopped')
 
 
 def restArm():
@@ -165,7 +165,7 @@ def restArm():
     time.sleep(0.5)
     runMotorSlow(MOTOR_2, 280 - getMotorPosition(MOTOR_2))
     time.sleep(0.5)
-    runMotorSlow(MOTOR_4, 380 - getMotorPosition(MOTOR_4))
+    runMotorSlow(MOTOR_4, 230 - getMotorPosition(MOTOR_4))
     ARM_OPEN = False
     stopMotors()
 
@@ -190,12 +190,12 @@ def initialArmPos():
     time.sleep(0.5)
     runMotor(MOTOR_3, 320)
     time.sleep(0.5)
-    runMotor(MOTOR_4, 330)
+    runMotor(MOTOR_4, 240)
     setMotorPosition(MOTOR_0, 360)
     setMotorPosition(MOTOR_1, 160)
     setMotorPosition(MOTOR_2, 350)
     setMotorPosition(MOTOR_3, 320)
-    setMotorPosition(MOTOR_4, 330)
+    setMotorPosition(MOTOR_4, 240)
     
     
 def initiateArm():
@@ -224,7 +224,7 @@ def grabbingArm():
     time.sleep(0.5)
     runMotorSlow(MOTOR_3, 320 - getMotorPosition(MOTOR_3))
     time.sleep(0.5)
-    runMotorSlow(MOTOR_4, 320 - getMotorPosition(MOTOR_4))
+    runMotorSlow(MOTOR_4, 240 - getMotorPosition(MOTOR_4))
 
 def openCloseGrip():
     # Used for laying arm back down from arm ready position
@@ -234,11 +234,11 @@ def openCloseGrip():
     global GRIP_OPEN
     if GRIP_OPEN:
         # Arm is open
-        runMotorSlow(MOTOR_4, 400 - getMotorPosition(MOTOR_4))
+        runMotorSlow(MOTOR_4, 290 - getMotorPosition(MOTOR_4))
         time.sleep(0.5)
     else:
         # Arm is closed
-        runMotorSlow(MOTOR_4, 320 - getMotorPosition(MOTOR_4))
+        runMotorSlow(MOTOR_4, 230 - getMotorPosition(MOTOR_4))
         time.sleep(0.5)
         runMotor(MOTOR_4, 0)
     GRIP_OPEN = not GRIP_OPEN
@@ -262,16 +262,16 @@ def connectToNetworkHub():
     port = 2001
     while(1):
         time.sleep(0.5)
-        print("Connecting to network hub")
+        print("Servo Hub: Connecting to network hub")
         try:
             networkHubSocket.connect((hostname, port))
-            print('Connected to network hub')
+            print('Servo Hub: Connected to network hub')
             break
         except socket.error as e:
-            print('Cant connect to network hub')
+            print('Servo Hub: Cant connect to network hub')
             networkHubSocket.close
         except KeyboardInterrupt:
-            print("Program Ended")
+            print("Servo Hub: Program Ended")
             networkHubSocket.close
             sys.exit()
 
@@ -316,7 +316,7 @@ def putInDownHole():
     time.sleep(0.5)
     runMotorSlow(MOTOR_2, 490 - getMotorPosition(MOTOR_2))
     time.sleep(0.5)
-    runMotorSlow(MOTOR_3, 220 - getMotorPosition(MOTOR_3))
+    runMotorSlow(MOTOR_3, 320 - getMotorPosition(MOTOR_3))
     time.sleep(0.5)
 
 connectToNetworkHub()
@@ -325,7 +325,7 @@ motorPwm.setPWMFreq(50) # Set frequency to 50 Hz
 initialArmPos()
 while(1):
     try:
-        print('Waiting...')
+        print('Servo Hub: Waiting...')
         packedCommand = networkHubSocket.recv(struct.calcsize(SERVO_FORMAT))
         command = struct.unpack(SERVO_FORMAT, packedCommand)
         opCode = command[0]
@@ -333,28 +333,28 @@ while(1):
         if(opCode == SERVO_COMMAND):
             servoCommand = command[1]
             if (servoCommand == REST_ARM_COMMAND):
-                print('Resting arm')
+                print('Servo Hub: Resting arm')
                 restArm()
             elif (servoCommand == INITIATE_ARM_COMMAND):
-                print('Initiating arm')
+                print('Servo Hub: Initiating arm')
                 initiateArm()
             elif (servoCommand == GRABBING_ARM_COMMAND):
-                print('Arm ready to grab')
+                print('Servo Hub: Arm ready to grab')
                 grabbingArm()
             elif (servoCommand == IN_HOLE_COMMAND):
-                print("Ready to put in hole")
+                print("Servo Hub: Ready to put in hole")
                 putInDownHole()
             elif (command == OPEN_CLOSE_GRIP_COMMAND):
                 openCloseGrip()
             elif (servoCommand == STOP_COMMAND):
-                print('Servo motors stopped')
+                print('Servo Hub: Servo motors stopped')
                 stopMotors()
         elif(opCode == SERVO_CONTROL):
             servoChannel = command[1]
             servoPosition = command[2]
-            print('Controlling servo ' + str(servoChannel) + ' at position ' + str(servoPosition))
+            print('Servo Hub: Controlling servo ' + str(servoChannel) + ' at position ' + str(servoPosition))
             runMotorSlow(servoChannel, servoPosition)
     except KeyboardInterrupt:
         break
     except:
-        print('Program Error')
+        print('Servo Hub: Program Error')

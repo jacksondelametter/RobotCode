@@ -3,6 +3,7 @@ import struct
 from threading import Timer
 import time
 import RPi.GPIO as GPIO
+import sys
 
 controllerSocket = None
 networkHubSocket = None
@@ -36,25 +37,31 @@ def setupControllerConnection():
     GPIO.output(LED1, GPIO.LOW)
     GPIO.output(LED2, GPIO.LOW)
     networkHubSocket = socket.socket()
-    hostname = '192.168.1.131'
+    hostname = '192.168.2.2'
+    #hostname = '192.168.2.2'
     print(hostname)
     port = 1234
     networkHubSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     while(1):
         time.sleep(0.5)
-        print('Creating network hub connection')
+        print('Network Hub: Creating network hub connection')
         try:
             networkHubSocket.bind((hostname, port))
             networkHubSocket.listen(100)
-            print('Created network hub connection')
+            print('Network Hub: Created network hub connection')
             break
+        except KeyboardInterrupt:
+            print('Connection Interupted')
+            command = (SERVO_COMMAND_OP_CODE, 0)
+            sendServoCommand(SERVO_COMMAND_OP_CODE, command)
         except:
-            print('Couldnt create network hub connection')
-    print('Created network hub connection')
+            print('Network Hub: Couldnt create network hub connection')
+            print(sys.exc_info()[0])
+    print('Network Hub: Created network hub connection')
     controllerSocket, addr = networkHubSocket.accept()
     GPIO.output(LED1, GPIO.HIGH)
     GPIO.output(LED2, GPIO.HIGH)
-    print("Controller connected")
+    print("Network Hub: Controller connected")
     
 
 def setupMotorProgramConnection():
@@ -64,15 +71,15 @@ def setupMotorProgramConnection():
     hostname = socket.gethostname()
     port = 4001
     while(1):
-        print('Waiting for motor program')
+        print('Network Hub: Waiting for motor program')
         try:
             motorServerSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             motorServerSocket.bind((hostname, port))
             motorServerSocket.listen(100)
-            print("Created motor program connection")
+            print("Network Hub: Created motor program connection")
             break
         except:
-            print('Couldnt make motor program connection')
+            print('Network Hub: Couldnt make motor program connection')
     motorSocket, addr = motorServerSocket.accept()
 
 def setupServoProgramConnection():
@@ -82,15 +89,15 @@ def setupServoProgramConnection():
     hostname = socket.gethostname()
     port = 2001
     while(1):
-        print('Waiting for servo program')
+        print('Network Hub: Waiting for servo program')
         try:
             servoServerSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             servoServerSocket.bind((hostname, port))
             servoServerSocket.listen(100)
-            print("Created servo program connection")
+            print("Network Hub: Created servo program connection")
             break
         except:
-            print('Couldnt make servo program connection')
+            print('Network Hub: Couldnt make servo program connection')
     servoSocket, addr = servoServerSocket.accept()
 
 def sendMotorCommand(leftSpeed, rightSpeed, sensorOn):
@@ -112,7 +119,7 @@ def sendServoControl(opCode, unpackedCommand):
 
 def sendStopCommand():
     global controllerSocket
-    print("Stopping")
+    print("Network Hub: Stopping")
     closeConnections()
 
 def setupConnections():
@@ -134,12 +141,12 @@ def closeConnections():
         networkHubSocket.shutdown(socket.SHUT_RDWR)
         networkHubSocket.close
     except:
-        print('Controller socket already closed')
+        print('Network Hub: Controller socket already closed')
     try:
         controllerSocket.shutdown(socket.SHUT_RDWR)
         controllerSocket.close
     except:
-        print('Controller socket already closed')
+        print('Network Hub: Controller socket already closed')
     '''try:
         motorSocket.shutdown(socket.SHUT_RDWR)
         motorSocket.close
@@ -196,45 +203,54 @@ while(1):
     try:
         timer = Timer(1, sendStopCommand)
         timer.start()
-        print('Waiting for command...')
+        #print('Network Hub: Waiting for command...')
         packedCommand = controllerSocket.recv(struct.calcsize(INPUT_FORMAT))
-        print('Received command')
+        #print('Network Hub: Received command')
         timer.cancel()
         command = struct.unpack(INPUT_FORMAT, packedCommand)
         opCode = command[0]
         #print('op code is ' + str(opCode))
         if(opCode == MOTOR_OP_CODE):
-            print('Sending motor command')
+            print('Network Hub: Sending motor command')
             leftMotorSpeed = command[1]
             rightMotorSpeed = command[2]
             sensorOn = command[3]
             sendMotorCommand(leftMotorSpeed, rightMotorSpeed, sensorOn)
             continue
         elif(opCode == SERVO_COMMAND_OP_CODE):
-            print('Sending servo command')
+            print('Network Hub: Sending servo command')
             sendServoCommand(opCode, command)
             continue
         elif(opCode == SERVO_CONTROL_OP_CODE):
-            print('Sending servo control')
+            print('Network Hub: Sending servo control')
             sendServoControl(opCode, command)
             continue
     except KeyboardInterrupt:
-        print("Program Ended")
+        print("Network Hub: Program Ended")
         stopMotors()
-        #sendServoCommand(SERVO_COMMAND_OP_CODE, 0)
-        closeConnections()
+        command = (SERVO_COMMAND_OP_CODE, 0)
+        sendServoCommand(SERVO_COMMAND_OP_CODE, command)
+        GPIO.output(LED1, GPIO.LOW)
+        GPIO.output(LED2, GPIO.LOW)
+        #closeConnections()
         break
     except socket.error:
-        print("Lost Connection")
+        print("Network Hub: Lost Connection")
         stopMotors()
-        #sendServoCommand(SERVO_COMMAND_OP_CODE, 0)
-        closeConnections()
+        #command = (SERVO_COMMAND_OP_CODE, 0)
+        #sendServoCommand(SERVO_COMMAND_OP_CODE, command)
+        GPIO.output(LED1, GPIO.LOW)
+        GPIO.output(LED2, GPIO.LOW)
+        #closeConnections()
         setupControllerConnection()
     except:
-        print("Program Error")
+        print("Network Hub: Program Error")
         stopMotors()
-        #sendServoCommand(SERVO_COMMAND_OP_CODE, 0)
-        closeConnections()
+        #command = (SERVO_COMMAND_OP_CODE, 0)
+        #sendServoCommand(SERVO_COMMAND_OP_CODE, command)
+        GPIO.output(LED1, GPIO.LOW)
+        GPIO.output(LED2, GPIO.LOW)
+        #closeConnections()
         setupControllerConnection()
 
         

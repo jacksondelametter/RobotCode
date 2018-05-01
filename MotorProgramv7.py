@@ -71,11 +71,16 @@ def runMotors(leftPower, rightPower, sensorsOn):
     isSpinRight = False
     isTurnLeft = False
     isTurnRight = False
+    isForward = False
     absRightPower = abs(rightPower)
     absLeftPower = abs(leftPower)
     if(sensorsOn and zone != 0):
-        # If sensor mode is one and the sensors are not clear
-        if (absRightPower < absLeftPower):
+        # If sensor mode is on and the sensors are not clear
+        # Get motor direction
+        if (rightPower > 0 and (rightPower == leftPower)):
+            # Motors trying to go forward
+            isForward = True
+        elif (absRightPower < absLeftPower):
             # Motors trying to turn right
             isTurnRight = True
         elif (absRightPower > absLeftPower):
@@ -87,17 +92,22 @@ def runMotors(leftPower, rightPower, sensorsOn):
         elif (rightPower > leftPower and absRightPower == absLeftPower):
             # Motors are spinning left and left sensor not clear
             isSpinLeft = True
+            
+         # Stop motors or adjust   
         if (zone == 1 and (isTurnLeft or isSpinLeft)):
             # zone 1 - wall in front of left sensor, dont turn left
             print('To close to left sensor')
             leftPower = 0
             rightPower = 0
-        elif (zone == 2 and (isTurnLeft or isSpinLeft or isTurnRight or isSpinRight)):
+        elif (zone == 1 and isForward):
+            # zone 1 - wall in fron of left sensor, adjust to the right
+            rightPower = rightPower * 0.95
+        elif (zone == 2 and (isTurnLeft or isSpinLeft)):
             # zone 2 - wall in even closer to left sensor, dont turn
             print('Way to close to left sensor')
             leftPower = 0
             rightPower = 0
-        elif (zone == 2):
+        elif (zone == 2 and isForward):
             # zone 2 - wall even closer to left sensor, adjust to the right
             print('Way to close to left sensor, adjusting')
             rightPower = rightPower*0.90
@@ -106,15 +116,22 @@ def runMotors(leftPower, rightPower, sensorsOn):
             print('To close to right sensor')
             leftPower = 0
             rightPower = 0
-        elif (zone == 4 and (isTurnRight or isSpinRight or isTurnLeft or isSpinLeft)):
+        elif (zone == 3 and isForward):
+            # zone 3 - wall close to right sensor, adjust to the left
+            leftPower = leftPower * 0.95
+        elif (zone == 4 and (isTurnRight or isSpinRight)):
             # zone 4 - wall even closer to right sensor, dont turn
             print('Way to close to right sensor')
             leftPower = 0
             rightPower = 0
-        elif (zone == 4):
-            # zone 4 - wall even closer to right sensor, adjust to the left
+        elif (zone == 4 and isForward):
+            # zone 4 - wall even closer to right sensor, adjust to the left sharper
             print('Way to close to right sensor, adjusting')
             leftPower = leftPower*0.90
+        elif (zone == 5 and isForward):
+            # zone 5 - wall to close to front sensor and trying to move forward, move backwards
+            rightPower = 0
+            leftPower = 0
         
         
     if (leftPower >= 0):
@@ -143,16 +160,16 @@ def connectToAutomationHub():
     port = 4002
     while(1):
         time.sleep(0.5)
-        print("Connecting to automation hub")
+        print("Motor Program: Connecting to automation hub")
         try:
             automationHubSocket.connect((hostname, port))
-            print('Connected to automation hub')
+            print('Motor Program: Connected to automation hub')
             break
         except socket.error as e:
-            print('Cant connect to automation hub')
+            print('Motor Program: Cant connect to automation hub')
             automationHubSocket.close
         except KeyboardInterrupt:
-            print("Program Ended")
+            print("Motor Program: Program Ended")
             automationHubSocket.close
             sys.exit()
 
@@ -164,16 +181,16 @@ def connectToNetworkHub():
     port = 4001
     while(1):
         time.sleep(0.5)
-        print("Connecting to network hub")
+        print("Motor Program: Connecting to network hub")
         try:
             networkHubSocket.connect((hostname, port))
-            print('Connected to network hub')
+            print('Motor Program: Connected to network hub')
             break
         except socket.error as e:
-            print('Cant connect to network hub')
+            print('Motor Program: Cant connect to network hub')
             networkHubSocket.close
         except KeyboardInterrupt:
-            print("Program Ended")
+            print("Motor Program: Program Ended")
             networkHubSocket.close
             sys.exit()
 
@@ -212,7 +229,7 @@ connectToNetworkHub()
 connectToAutomationHub()
 while(1):
     try:
-        print("Waiting...")
+        print("Motor Program: Waiting...")
         readable, writable, exceptional = select.select([networkHubSocket, automationHubSocket], [], [])
         for socket in readable:
             if socket is networkHubSocket:    
@@ -232,7 +249,7 @@ while(1):
         stopMotors()
         break
     except:
-        print('Program Error')
+        print('Motor Program: Program Error')
         print(sys.exc_info()[0])
         stopMotors()
         
